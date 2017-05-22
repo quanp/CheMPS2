@@ -25,6 +25,7 @@
 #include <getopt.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <sstream> 
 
 #include "Initialize.h"
 #include "CASSCF.h"
@@ -862,15 +863,32 @@ int main( int argc, char ** argv ){
          if ( state > 0 ){ dmrgsolver->newExcitation( fabs( DMRG_ENERGY ) ); }
          DMRG_ENERGY = dmrgsolver->Solve();
          if (( state == 0 ) && ( excitation > 0 )){ dmrgsolver->activateExcitations( excitation ); }
-      }
 
       // Calculate the RDMs and correlations
       const bool calc_3rdm = (( molcas_3rdm.length() != 0 ) || ( molcas_f4rdm.length() != 0 ));
       const bool calc_2rdm = (( print_corr == true ) || ( molcas_2rdm.length() != 0 ));
       if (( calc_2rdm ) || ( calc_3rdm )){
          dmrgsolver->calc_rdms_and_correlations( calc_3rdm, false );
-         if ( molcas_2rdm.length() != 0 ){ dmrgsolver->get2DM()->save_HAM( molcas_2rdm ); }
-         if ( molcas_3rdm.length() != 0 ){ dmrgsolver->get3DM()->save_HAM( molcas_3rdm ); }
+
+//         if ( molcas_2rdm.length() != 0 ){ dmrgsolver->get2DM()->save_HAM( molcas_2rdm ); }
+//         if ( molcas_3rdm.length() != 0 ){ dmrgsolver->get3DM()->save_HAM( molcas_3rdm ); }
+
+         std::string result_rdm;
+         std::stringstream sstm;
+         
+         if ( molcas_2rdm.length() != 0 ){ 
+           sstm.str("");
+           sstm << molcas_2rdm << ".r" << state;
+           result_rdm = sstm.str();
+           dmrgsolver->get2DM()->save_HAM( result_rdm ); 
+         }
+         if ( molcas_3rdm.length() != 0 ){ 
+           sstm.str("");
+           sstm << molcas_3rdm << ".r" << state;
+           result_rdm = sstm.str();
+           dmrgsolver->get3DM()->save_HAM( result_rdm ); 
+         }
+
          if ( molcas_f4rdm.length() != 0 ){
             const int LAS      = ham->getL();
             const int LAS_pow6 = LAS * LAS * LAS * LAS * LAS * LAS;
@@ -880,12 +898,17 @@ int main( int argc, char ** argv ){
             for ( int cnt = 0; cnt < LAS_pow6; cnt++ ){ result[ cnt ] = 0.0; }
             ham->readfock( molcas_fock, fockmx, true );
             CheMPS2::CASSCF::fock_dot_4rdm( fockmx, dmrgsolver, ham, 0, 0, work, result, false, false );
-            CheMPS2::ThreeDM::save_HAM_generic( molcas_f4rdm, LAS, "F.4-RDM", result );
+
+            sstm.str("");
+            sstm << molcas_f4rdm << ".r" << state;
+            result_rdm = sstm.str();
+            CheMPS2::ThreeDM::save_HAM_generic( result_rdm, LAS, "F.4-RDM", result );
             delete [] fockmx;
             delete [] work;
             delete [] result;
          }
          if ( print_corr ){ dmrgsolver->getCorrelations()->Print(); }
+      }
       }
 
       // Clean up
