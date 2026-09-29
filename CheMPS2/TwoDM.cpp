@@ -303,12 +303,47 @@ void CheMPS2::TwoDM::save_HAM( const string filename ) const{
    H5Dclose( dataset_id );
    H5Sclose( dataspace_id );
    H5Gclose( group_id );
+
+   // Create and save 1-RDM in the ORIGINAL HAM indices
+   const int spin_size = L * L;
+   double * one_array = new double[ spin_size ];
+   for ( int ham2 = 0; ham2 < L; ham2++ ){
+      for ( int ham1 = 0; ham1 < L; ham1++ ){
+         one_array[ ham1 + L * ham2 ] = get1RDM_HAM( ham1, ham2 );
+      }
+   }
+   hsize_t spin_dimarray = spin_size;
+   hid_t   group_one     = H5Gcreate( file_id, "1-RDM", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT );
+   hid_t   dspace_one    = H5Screate_simple( 1, &spin_dimarray, NULL );
+   hid_t   dset_one      = H5Dcreate( group_one, "elements", H5T_IEEE_F64LE, dspace_one, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT );
+   H5Dwrite( dset_one, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, one_array );
+   H5Dclose( dset_one );
+   H5Sclose( dspace_one );
+   H5Gclose( group_one );
+   delete [] one_array;
+
+   // Create and save spin-1RDM in the ORIGINAL HAM indices
+   double * spin_array = new double[ spin_size ];
+   for ( int ham2 = 0; ham2 < L; ham2++ ){
+      for ( int ham1 = 0; ham1 < L; ham1++ ){
+         spin_array[ ham1 + L * ham2 ] = spin_density_ham( ham1, ham2 );
+      }
+   }
+   hid_t   group_spin    = H5Gcreate( file_id, "SPIN-1RDM", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT );
+   hid_t   dspace_spin   = H5Screate_simple( 1, &spin_dimarray, NULL );
+   hid_t   dset_spin     = H5Dcreate( group_spin, "elements", H5T_IEEE_F64LE, dspace_spin, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT );
+   H5Dwrite( dset_spin, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, spin_array );
+   H5Dclose( dset_spin );
+   H5Sclose( dspace_spin );
+   H5Gclose( group_spin );
+   delete [] spin_array;
+
    H5Fclose( file_id );
 
    // Deallocate the array
    delete [] local_array;
 
-   cout << "Saved the 2-RDM to the file " << filename << endl;
+   cout << "Saved the 2-RDM and spin-1RDM to the file " << filename << endl;
 
 }
 
