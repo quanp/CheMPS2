@@ -130,7 +130,7 @@ namespace CheMPS2{
          int L;
 
          //The array length of elements and (when allocated) temp_disk_vals and temp_disk_orbs = ( disk ) ? L*L*L*L*L : L*L*L*L*L*L
-         int array_size;
+         long long array_size;
 
          //The 3-RDM elements are stored in the HAMILTONIAN indices
          double * elements;
@@ -142,7 +142,7 @@ namespace CheMPS2{
          double * temp_disk_vals;
 
          //The number of temporary values / orbitals
-         int temp_disk_counter;
+         long long temp_disk_counter;
 
          //Create file
          void create_file() const;

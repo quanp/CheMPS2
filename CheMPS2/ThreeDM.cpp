@@ -47,13 +47,12 @@ CheMPS2::ThreeDM::ThreeDM( const SyBookkeeper * book_in, const Problem * prob_in
       const long long linsize = ( long long ) L;
       const long long size    = (( disk ) ? linsize * linsize * linsize * linsize * linsize
                                           : linsize * linsize * linsize * linsize * linsize * linsize );
-      assert( INT_MAX >= size );
       array_size = size;
    }
 
    elements = new double[ array_size ];
    #pragma omp simd
-   for ( int cnt = 0; cnt < array_size; cnt++ ){ elements[ cnt ] = 0.0; }
+   for ( long long cnt = 0; cnt < array_size; cnt++ ){ elements[ cnt ] = 0.0; }
 
    if ( disk ){
       temp_disk_orbs = new int[ 6 * array_size ];
@@ -83,7 +82,7 @@ void CheMPS2::ThreeDM::mpi_allreduce(){
          read_file( orb );
          MPIchemps2::allreduce_array_double( elements, temp_disk_vals, array_size );
          #pragma omp simd
-         for ( int cnt = 0; cnt < array_size; cnt++ ){ elements[ cnt ] = temp_disk_vals[ cnt ]; }
+         for ( long long cnt = 0; cnt < array_size; cnt++ ){ elements[ cnt ] = temp_disk_vals[ cnt ]; }
          write_file( orb );
       }
 
@@ -92,7 +91,7 @@ void CheMPS2::ThreeDM::mpi_allreduce(){
       double * temp = new double[ array_size ];
       MPIchemps2::allreduce_array_double( elements, temp, array_size );
       #pragma omp simd
-      for ( int cnt = 0; cnt < array_size; cnt++ ){ elements[ cnt ] = temp[ cnt ]; }
+      for ( long long cnt = 0; cnt < array_size; cnt++ ){ elements[ cnt ] = temp[ cnt ]; }
       delete [] temp;
 
    }
@@ -113,7 +112,7 @@ void CheMPS2::ThreeDM::set_dmrg_index( const int cnt1, const int cnt2, const int
    const int orb6 = (( prob->gReorder() ) ? prob->gf2( cnt6 ) : cnt6 );
 
    if ( disk ){
-      int private_counter = -1;
+      long long private_counter = -1;
       #pragma omp critical
       {
          private_counter = temp_disk_counter;
@@ -130,26 +129,26 @@ void CheMPS2::ThreeDM::set_dmrg_index( const int cnt1, const int cnt2, const int
       return;
    }
 
-   elements[ orb1 + L * ( orb2 + L * ( orb3 + L * ( orb4 + L * ( orb5 + L * orb6 )))) ] = value;
-   elements[ orb2 + L * ( orb3 + L * ( orb1 + L * ( orb5 + L * ( orb6 + L * orb4 )))) ] = value;
-   elements[ orb3 + L * ( orb1 + L * ( orb2 + L * ( orb6 + L * ( orb4 + L * orb5 )))) ] = value;
-   elements[ orb2 + L * ( orb1 + L * ( orb3 + L * ( orb5 + L * ( orb4 + L * orb6 )))) ] = value;
-   elements[ orb3 + L * ( orb2 + L * ( orb1 + L * ( orb6 + L * ( orb5 + L * orb4 )))) ] = value;
-   elements[ orb1 + L * ( orb3 + L * ( orb2 + L * ( orb4 + L * ( orb6 + L * orb5 )))) ] = value;
+   elements[ orb1 + (long long)L * ( orb2 + (long long)L * ( orb3 + (long long)L * ( orb4 + (long long)L * ( orb5 + (long long)L * orb6 )))) ] = value;
+   elements[ orb2 + (long long)L * ( orb3 + (long long)L * ( orb1 + (long long)L * ( orb5 + (long long)L * ( orb6 + (long long)L * orb4 )))) ] = value;
+   elements[ orb3 + (long long)L * ( orb1 + (long long)L * ( orb2 + (long long)L * ( orb6 + (long long)L * ( orb4 + (long long)L * orb5 )))) ] = value;
+   elements[ orb2 + (long long)L * ( orb1 + (long long)L * ( orb3 + (long long)L * ( orb5 + (long long)L * ( orb4 + (long long)L * orb6 )))) ] = value;
+   elements[ orb3 + (long long)L * ( orb2 + (long long)L * ( orb1 + (long long)L * ( orb6 + (long long)L * ( orb5 + (long long)L * orb4 )))) ] = value;
+   elements[ orb1 + (long long)L * ( orb3 + (long long)L * ( orb2 + (long long)L * ( orb4 + (long long)L * ( orb6 + (long long)L * orb5 )))) ] = value;
 
-   elements[ orb4 + L * ( orb5 + L * ( orb6 + L * ( orb1 + L * ( orb2 + L * orb3 )))) ] = value;
-   elements[ orb5 + L * ( orb6 + L * ( orb4 + L * ( orb2 + L * ( orb3 + L * orb1 )))) ] = value;
-   elements[ orb6 + L * ( orb4 + L * ( orb5 + L * ( orb3 + L * ( orb1 + L * orb2 )))) ] = value;
-   elements[ orb5 + L * ( orb4 + L * ( orb6 + L * ( orb2 + L * ( orb1 + L * orb3 )))) ] = value;
-   elements[ orb6 + L * ( orb5 + L * ( orb4 + L * ( orb3 + L * ( orb2 + L * orb1 )))) ] = value;
-   elements[ orb4 + L * ( orb6 + L * ( orb5 + L * ( orb1 + L * ( orb3 + L * orb2 )))) ] = value;
+   elements[ orb4 + (long long)L * ( orb5 + (long long)L * ( orb6 + (long long)L * ( orb1 + (long long)L * ( orb2 + (long long)L * orb3 )))) ] = value;
+   elements[ orb5 + (long long)L * ( orb6 + (long long)L * ( orb4 + (long long)L * ( orb2 + (long long)L * ( orb3 + (long long)L * orb1 )))) ] = value;
+   elements[ orb6 + (long long)L * ( orb4 + (long long)L * ( orb5 + (long long)L * ( orb3 + (long long)L * ( orb1 + (long long)L * orb2 )))) ] = value;
+   elements[ orb5 + (long long)L * ( orb4 + (long long)L * ( orb6 + (long long)L * ( orb2 + (long long)L * ( orb1 + (long long)L * orb3 )))) ] = value;
+   elements[ orb6 + (long long)L * ( orb5 + (long long)L * ( orb4 + (long long)L * ( orb3 + (long long)L * ( orb2 + (long long)L * orb1 )))) ] = value;
+   elements[ orb4 + (long long)L * ( orb6 + (long long)L * ( orb5 + (long long)L * ( orb1 + (long long)L * ( orb3 + (long long)L * orb2 )))) ] = value;
 
 }
 
 double CheMPS2::ThreeDM::get_ham_index( const int cnt1, const int cnt2, const int cnt3, const int cnt4, const int cnt5, const int cnt6 ) const{
 
    assert( disk == false );
-   return elements[ cnt1 + L * ( cnt2 + L * ( cnt3 + L * ( cnt4 + L * ( cnt5 + L * cnt6 )))) ];
+   return elements[ cnt1 + (long long)L * ( cnt2 + (long long)L * ( cnt3 + (long long)L * ( cnt4 + (long long)L * ( cnt5 + (long long)L * cnt6 )))) ];
 
 }
 
@@ -166,10 +165,10 @@ void CheMPS2::ThreeDM::fill_ham_index( const double alpha, const bool add, doubl
          const int shift = ( ham_orb - last_orb_start ) * array_size;
          if ( add == false ){
             #pragma omp simd
-            for ( int cnt = 0; cnt < array_size; cnt++ ){ storage[ shift + cnt ]  = alpha * elements[ cnt ]; }
+            for ( long long cnt = 0; cnt < array_size; cnt++ ){ storage[ shift + cnt ]  = alpha * elements[ cnt ]; }
          } else {
             #pragma omp simd
-            for ( int cnt = 0; cnt < array_size; cnt++ ){ storage[ shift + cnt ] += alpha * elements[ cnt ]; }
+            for ( long long cnt = 0; cnt < array_size; cnt++ ){ storage[ shift + cnt ] += alpha * elements[ cnt ]; }
          }
       }
 
@@ -179,10 +178,10 @@ void CheMPS2::ThreeDM::fill_ham_index( const double alpha, const bool add, doubl
       const int size  = last_orb_num   * L * L * L * L * L;
       if ( add == false ){
          #pragma omp simd
-         for ( int cnt = 0; cnt < size; cnt++ ){ storage[ cnt ]  = alpha * elements[ shift + cnt ]; }
+         for ( long long int cnt = 0; cnt < size; cnt++ ){ storage[ cnt ]  = alpha * elements[ shift + cnt ]; }
       } else {
          #pragma omp simd
-         for ( int cnt = 0; cnt < size; cnt++ ){ storage[ cnt ] += alpha * elements[ shift + cnt ]; }
+         for ( long long int cnt = 0; cnt < size; cnt++ ){ storage[ cnt ] += alpha * elements[ shift + cnt ]; }
       }
 
    }
@@ -319,14 +318,33 @@ void CheMPS2::ThreeDM::correct_higher_multiplicities(){
    if ( prob->gTwoS() != 0 ){
       double alpha = 1.0 / ( prob->gTwoS() + 1.0 );
       int inc1 = 1;
+ 
       if ( disk ){
          for ( int ham_orb = 0; ham_orb < L; ham_orb++ ){
             read_file( ham_orb );
-            dscal_( &array_size, &alpha, elements, &inc1 );
+
+            // Process in chunks if array_size > INT_MAX
+            long long remaining = array_size;
+            long long offset = 0;
+            while ( remaining > 0 ){
+               int chunk_size = (remaining > INT_MAX) ? INT_MAX : static_cast<int>(remaining);
+               dscal_( &chunk_size, &alpha, elements + offset, &inc1 );
+               offset += chunk_size;
+               remaining -= chunk_size;
+            }
+
             write_file( ham_orb );
          }
       } else {
-         dscal_( &array_size, &alpha, elements, &inc1 );
+         // Process in chunks if array_size > INT_MAX
+         long long remaining = array_size;
+         long long offset = 0;
+         while ( remaining > 0 ){
+            int chunk_size = (remaining > INT_MAX) ? INT_MAX : static_cast<int>(remaining);
+            dscal_( &chunk_size, &alpha, elements + offset, &inc1 );
+            offset += chunk_size;
+            remaining -= chunk_size;
+         }
       }
    }
 
@@ -339,7 +357,7 @@ void CheMPS2::ThreeDM::flush_disk(){
 
       read_file( ham_orb );
 
-      for ( int counter = 0; counter < temp_disk_counter; counter++ ){
+      for ( long long counter = 0; counter < temp_disk_counter; counter++ ){
 
          const int orb1 = temp_disk_orbs[ 6 * counter + 0 ];
          const int orb2 = temp_disk_orbs[ 6 * counter + 1 ];
