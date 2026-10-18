@@ -80,7 +80,15 @@ void CheMPS2::ThreeDM::mpi_allreduce(){
 
       for ( int orb = 0; orb < L; orb++ ){
          read_file( orb );
-         MPIchemps2::allreduce_array_double( elements, temp_disk_vals, array_size );
+         // Process in chunks if array_size > INT_MAX : MPI_Allreduce takes an int count
+         long long remaining = array_size;
+         long long offset    = 0;
+         while ( remaining > 0 ){
+            int chunk_size = ( remaining > INT_MAX ) ? INT_MAX : static_cast<int>( remaining );
+            MPIchemps2::allreduce_array_double( elements + offset, temp_disk_vals + offset, chunk_size );
+            offset    += chunk_size;
+            remaining -= chunk_size;
+         }
          #pragma omp simd
          for ( long long cnt = 0; cnt < array_size; cnt++ ){ elements[ cnt ] = temp_disk_vals[ cnt ]; }
          write_file( orb );
@@ -89,7 +97,15 @@ void CheMPS2::ThreeDM::mpi_allreduce(){
    } else {
 
       double * temp = new double[ array_size ];
-      MPIchemps2::allreduce_array_double( elements, temp, array_size );
+      // Process in chunks if array_size > INT_MAX : MPI_Allreduce takes an int count
+      long long remaining = array_size;
+      long long offset    = 0;
+      while ( remaining > 0 ){
+         int chunk_size = ( remaining > INT_MAX ) ? INT_MAX : static_cast<int>( remaining );
+         MPIchemps2::allreduce_array_double( elements + offset, temp + offset, chunk_size );
+         offset    += chunk_size;
+         remaining -= chunk_size;
+      }
       #pragma omp simd
       for ( long long cnt = 0; cnt < array_size; cnt++ ){ elements[ cnt ] = temp[ cnt ]; }
       delete [] temp;
@@ -162,7 +178,7 @@ void CheMPS2::ThreeDM::fill_ham_index( const double alpha, const bool add, doubl
 
       for ( int ham_orb = last_orb_start; ham_orb < ( last_orb_start + last_orb_num ); ham_orb++ ){
          read_file( ham_orb );
-         const int shift = ( ham_orb - last_orb_start ) * array_size;
+         const long long shift = ( ham_orb - last_orb_start ) * array_size;
          if ( add == false ){
             #pragma omp simd
             for ( long long cnt = 0; cnt < array_size; cnt++ ){ storage[ shift + cnt ]  = alpha * elements[ cnt ]; }
@@ -174,8 +190,8 @@ void CheMPS2::ThreeDM::fill_ham_index( const double alpha, const bool add, doubl
 
    } else {
 
-      const int shift = last_orb_start * L * L * L * L * L;
-      const int size  = last_orb_num   * L * L * L * L * L;
+      const long long shift = (long long) last_orb_start * L * L * L * L * L;
+      const long long size  = (long long) last_orb_num   * L * L * L * L * L;
       if ( add == false ){
          #pragma omp simd
          for ( long long int cnt = 0; cnt < size; cnt++ ){ storage[ cnt ]  = alpha * elements[ shift + cnt ]; }
@@ -198,7 +214,7 @@ double CheMPS2::ThreeDM::trace(){
          read_file( cnt3 );
          for ( int cnt2 = 0; cnt2 < L; cnt2++ ){
             for ( int cnt1 = 0; cnt1 < L; cnt1++ ){
-               value += elements[ cnt1 + L * ( cnt2 + L * ( cnt3 + L * ( cnt1 + L * cnt2 ))) ];
+               value += elements[ cnt1 + (long long)L * ( cnt2 + (long long)L * ( cnt3 + (long long)L * ( cnt1 + (long long)L * cnt2 ))) ];
             }
          }
       }
@@ -367,18 +383,18 @@ void CheMPS2::ThreeDM::flush_disk(){
          const int orb6 = temp_disk_orbs[ 6 * counter + 5 ];
          const double value = temp_disk_vals[ counter ];
 
-         if ( orb1 == ham_orb ){ elements[ orb5 + L * ( orb6 + L * ( orb4 + L * ( orb2 + L * orb3 ))) ] = value;
-                                 elements[ orb6 + L * ( orb5 + L * ( orb4 + L * ( orb3 + L * orb2 ))) ] = value; }
-         if ( orb2 == ham_orb ){ elements[ orb6 + L * ( orb4 + L * ( orb5 + L * ( orb3 + L * orb1 ))) ] = value;
-                                 elements[ orb4 + L * ( orb6 + L * ( orb5 + L * ( orb1 + L * orb3 ))) ] = value; }
-         if ( orb3 == ham_orb ){ elements[ orb4 + L * ( orb5 + L * ( orb6 + L * ( orb1 + L * orb2 ))) ] = value;
-                                 elements[ orb5 + L * ( orb4 + L * ( orb6 + L * ( orb2 + L * orb1 ))) ] = value; }
-         if ( orb4 == ham_orb ){ elements[ orb2 + L * ( orb3 + L * ( orb1 + L * ( orb5 + L * orb6 ))) ] = value;
-                                 elements[ orb3 + L * ( orb2 + L * ( orb1 + L * ( orb6 + L * orb5 ))) ] = value; }
-         if ( orb5 == ham_orb ){ elements[ orb3 + L * ( orb1 + L * ( orb2 + L * ( orb6 + L * orb4 ))) ] = value;
-                                 elements[ orb1 + L * ( orb3 + L * ( orb2 + L * ( orb4 + L * orb6 ))) ] = value; }
-         if ( orb6 == ham_orb ){ elements[ orb1 + L * ( orb2 + L * ( orb3 + L * ( orb4 + L * orb5 ))) ] = value;
-                                 elements[ orb2 + L * ( orb1 + L * ( orb3 + L * ( orb5 + L * orb4 ))) ] = value; }
+         if ( orb1 == ham_orb ){ elements[ orb5 + (long long)L * ( orb6 + (long long)L * ( orb4 + (long long)L * ( orb2 + (long long)L * orb3 ))) ] = value;
+                                 elements[ orb6 + (long long)L * ( orb5 + (long long)L * ( orb4 + (long long)L * ( orb3 + (long long)L * orb2 ))) ] = value; }
+         if ( orb2 == ham_orb ){ elements[ orb6 + (long long)L * ( orb4 + (long long)L * ( orb5 + (long long)L * ( orb3 + (long long)L * orb1 ))) ] = value;
+                                 elements[ orb4 + (long long)L * ( orb6 + (long long)L * ( orb5 + (long long)L * ( orb1 + (long long)L * orb3 ))) ] = value; }
+         if ( orb3 == ham_orb ){ elements[ orb4 + (long long)L * ( orb5 + (long long)L * ( orb6 + (long long)L * ( orb1 + (long long)L * orb2 ))) ] = value;
+                                 elements[ orb5 + (long long)L * ( orb4 + (long long)L * ( orb6 + (long long)L * ( orb2 + (long long)L * orb1 ))) ] = value; }
+         if ( orb4 == ham_orb ){ elements[ orb2 + (long long)L * ( orb3 + (long long)L * ( orb1 + (long long)L * ( orb5 + (long long)L * orb6 ))) ] = value;
+                                 elements[ orb3 + (long long)L * ( orb2 + (long long)L * ( orb1 + (long long)L * ( orb6 + (long long)L * orb5 ))) ] = value; }
+         if ( orb5 == ham_orb ){ elements[ orb3 + (long long)L * ( orb1 + (long long)L * ( orb2 + (long long)L * ( orb6 + (long long)L * orb4 ))) ] = value;
+                                 elements[ orb1 + (long long)L * ( orb3 + (long long)L * ( orb2 + (long long)L * ( orb4 + (long long)L * orb6 ))) ] = value; }
+         if ( orb6 == ham_orb ){ elements[ orb1 + (long long)L * ( orb2 + (long long)L * ( orb3 + (long long)L * ( orb4 + (long long)L * orb5 ))) ] = value;
+                                 elements[ orb2 + (long long)L * ( orb1 + (long long)L * ( orb3 + (long long)L * ( orb5 + (long long)L * orb4 ))) ] = value; }
       }
 
       write_file( ham_orb );
